@@ -1,0 +1,103 @@
+<?php namespace ProcessWire;
+
+/**
+ *
+ * Remove Blocks
+ *
+ * @author Robin Sallis
+ *
+ * ProcessWire 3.x
+ * Copyright (C) 2011 by Ryan Cramer
+ * Licensed under GNU/GPL v2, see LICENSE.TXT
+ *
+ * http://www.processwire.com
+ * http://www.ryancramer.com
+ *
+ */
+
+class TextformatterRemoveBlocks extends Textformatter implements ConfigurableModule {
+
+	public static function getModuleInfo() {
+		return array(
+			'title' => 'Remove Blocks',
+			'summary' => 'Textformatter that removes blocks of text/markup between configurable delimiters from output.',
+			'version' => '0.1.0',
+			'author' => 'Robin Sallis',
+			'href' => 'https://github.com/Toutouwai/TextformatterRemoveBlocks',
+			'icon' => 'times-circle-o',
+		); 
+	}
+
+	/**
+	 * Construct
+	 */
+	public function __construct() {
+		// Default config
+		$this->open_delimiter = '{{';
+		$this->close_delimiter = '}}';
+	}
+
+
+	/**
+	 * Format string
+	 *
+	 * @param string $str
+	 */
+	public function format(&$str) {
+
+		// Delimiters
+		$open_delimiter = $this->open_delimiter;
+		$close_delimiter = $this->close_delimiter;
+
+		// Exit early when possible
+		if(strpos($str, $open_delimiter) === false) return;
+		if(strpos($str, $close_delimiter) === false) return;
+
+		// Regex (borrowed from TextformatterHannaCode)
+		$regex = '!' .
+			'(?:<([a-zA-Z]+)' . // 1 = Optional HTML open tag
+			'[^>]*>[\s\r\n]*)?' . // HTML open tag attributes and whitespace, if present
+			preg_quote($open_delimiter, '!') . // Open delimiter
+			'(.+?)' . // 2 = Comment contents
+			preg_quote($close_delimiter, '!') . // Close delimiter
+			'(?:[\s\r\n]*</(\1)>)?' . // 3 = Optional close HTML tag
+			'!s';
+
+		// Return if no matches
+		if(!preg_match_all($regex, $str, $matches)) return;
+
+		// Remove matches
+		foreach($matches[0] as $match) $str = str_replace($match, '', $str);
+
+	}
+
+	/**
+	 * Config inputfields
+	 *
+	 * @param InputfieldWrapper $inputfields
+	 */
+	public function getModuleConfigInputfields($inputfields) {
+
+		/* @var InputfieldText $f */
+		$f = $this->modules->InputfieldText;
+		$f_name = 'open_delimiter';
+		$f->name = $f_name;
+		$f->label = $this->_('Open delimiter');
+		$f->value = $this->$f_name;
+		$f->columnWidth = 50;
+		$f->required = true;
+		$inputfields->add($f);
+
+		/* @var InputfieldText $f */
+		$f = $this->modules->InputfieldText;
+		$f_name = 'close_delimiter';
+		$f->name = $f_name;
+		$f->label = $this->_('Close delimiter');
+		$f->value = $this->$f_name;
+		$f->columnWidth = 50;
+		$f->required = true;
+		$inputfields->add($f);
+
+	}
+
+}
